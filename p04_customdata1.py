@@ -13,6 +13,8 @@ import random
 from PIL import Image
 from typing import Tuple, Dict, List
 from torchinfo import summary
+from tqdm.auto import tqdm
+from timeit import default_timer as timer
 
 print(torch.__version__)
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -325,7 +327,7 @@ image_path_list = list(image_path.glob("*/*/*.jpg"))
 # Plot random images
 # plot_transformed_images(
 #     image_paths=image_path_list,
-#     transform=train_transforms,
+#     transform=train_transforms,          #####################################eror#################
 #     n=3
 # )
 
@@ -342,16 +344,16 @@ test_dataloader_simple = DataLoader(dataset=test_data_simple, batch_size=BATCH_S
 
 
 class TinyVGG(nn.Module):
-    def __init__(self,input_shape:int,hidden_units:int,output_shape:int)->None:
+    def __init__(self, input_shape: int, hidden_units: int, output_shape: int) -> None:
         super().__init__()
-        self.conv_block_1=nn.Sequential(
-            nn.Conv2d(in_channels=input_shape,out_channels=hidden_units,
-                      kernel_size=3,stride=1,padding=1),
+        self.conv_block_1 = nn.Sequential(
+            nn.Conv2d(in_channels=input_shape, out_channels=hidden_units,
+                      kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(in_channels=hidden_units,out_channels=hidden_units,
-                      kernel_size=3,stride=1,padding=1),
+            nn.Conv2d(in_channels=hidden_units, out_channels=hidden_units,
+                      kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2,stride=2)
+            nn.MaxPool2d(kernel_size=2, stride=2)
         )
         self.conv_block_2 = nn.Sequential(
             nn.Conv2d(in_channels=hidden_units, out_channels=hidden_units,
@@ -362,20 +364,22 @@ class TinyVGG(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2)
         )
-        self.classifier=nn.Sequential(
+        self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(in_features=hidden_units*16*16, # input shape for linear=hiden_unit * h*w of last conv layer
+            nn.Linear(in_features=hidden_units * 16 * 16,  # input shape for linear=hiden_unit * h*w of last conv layer
                       out_features=output_shape)
         )
-    def forward(self,x):
-        x=self.conv_block_1(x)
+
+    def forward(self, x):
+        x = self.conv_block_1(x)
         # print(x.shape)
-        x=self.conv_block_2(x)
+        x = self.conv_block_2(x)
         # print(x.shape)
-        x=self.classifier(x)
+        x = self.classifier(x)
         # print(x)
         return x
         # return self.classifier(self.conv_block_2(self.conv_block_1(x)))
+
 
 # gpu brrrr
 
@@ -386,10 +390,78 @@ model_0 = TinyVGG(input_shape=3, hidden_units=10,
 print(model_0)
 
 image_batch, label_batch = next(iter(train_dataloader_simple))
-image_batch=image_batch.to(device)
+image_batch = image_batch.to(device)
 print(image_batch.shape)
 # print(model_0(image_batch))
 
-print(summary(model_0,input_size=([1,3,64,64])))
+print(summary(model_0, input_size=([1, 3, 64, 64])))
 
-def train_step()
+
+def train_step(model: torch.nn.Module, dataloader: torch.utils.data.DataLoader,
+               loss_fn: nn.Module, optimizer: torch.optim.Optimizer, device=device):
+    y_pred = model.train()
+    train_loss, train_acc = 0
+    for batch, X, y in enumerate(dataloader):
+        X, y = X.to(device), y.to(device)
+        loss = loss_fn(y_pred, y)
+        train_loss += loss.item()
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        y_pred_class = torch.argmax(torch.softmax(y_pred, dim=1), dim=1)
+        train_acc += (y_pred_class == y).sum().item() / len(y_pred)
+
+        train_loss = train_loss / len(dataloader)
+        train_acc = train_acc / len(dataloader)
+        return train_loss, train_acc
+
+
+def test_step(model: nn.Module, dataloader: torch.utils.data.DataLoader,
+              loss_fn=nn.Module):
+    model.eval()
+    test_loss, test_acc = 0, 0
+    with torch.inference_mode():
+        for batch, X, y in enumerate(dataloader):
+            X, y = X.to(device), y.to(device)
+            test_pred_logits = model_0(y)
+            loss = loss_fn(test_pred_logits, y)
+            test_loss += loss.item()
+            test_pred_labels = torch.argmax(test_pred_logits, dim=1)
+            test_acc += ((test_pred_labels == y).sum().item() / len(test_pred_labels))
+        test_loss = test_loss / len(dataloader)
+        test_acc = test_acc / len(dataloader)
+        return test_loss, test_acc
+
+
+def train(model: torch.nn.Module, train_dataloader: torch.utils.data.DataLoader,
+          test_dataloader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer,
+          loss_fn: torch.nn.Module = nn.CrossEntropyLoss(), epochs: int = 5, device=device):
+    results = {"train_loss": [], "train_acc": [], "test_loss": [], "test_acc": []}
+    for epoch in tqdm(range(epochs)):
+        train_loss, train_acc = train_step(model=model, dataloader=train_dataloader,
+                                           loss_fn=loss_fn, optimizer=optimizer)
+        test_loss, test_acc = test_step(model=model, dataloader=test_dataloader,
+                                        loss_fn=loss_fn)
+        print(f"epoch: {epoch} | Train loss: {train_loss:.4f} | Train acc: {train_acc:.4f} | "
+              f"Test loss: {test_loss:.4f} | Test acc: {test_acc:.4f}")
+        results["train_loss"].append(train_loss)
+        results["train_acc"].append(train_acc)
+        results["test_loss"].append(test_loss)
+        results["test_acc"].append(test_acc)
+    return results
+
+
+torch.manual_seed(42)
+torch.cuda.manual_seed(42)
+NUM_EPOCHS = 5
+model_0 = TinyVGG(input_shape=3, hidden_units=10, output_shape=len(train_data.classes)).to(device)
+loss_fn = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(params=model_0.parameters(), lr=0.001)
+
+start_timer = timer()
+model_0_results = train(model=model_0, train_dataloader=train_dataloader_simple,
+                        test_dataloader=test_dataloader_simple, optimizer=optimizer,
+                        loss_fn=loss_fn, epochs=NUM_EPOCHS)
+end_time = timer()
+print(f"Total training time: {end_time - start_timer:.3f} secends")
+print(model_0_results)
