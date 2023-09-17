@@ -16,6 +16,7 @@ from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 from torchmetrics import ConfusionMatrix
 from mlxtend.plotting import plot_confusion_matrix
+from p03_Compvision4ConvPull import model_2_results
 
 BATCH_SIZE = 32
 
@@ -225,3 +226,8 @@ fig, ax = plot_confusion_matrix(
     figsize=(10, 7)
 )
 plt.show()
+
+model_result_close=torch.isclose(torch.tensor(model_2_results["model_loss"]),
+              torch.tensor(loaded_model3_results["model_loss"]),
+              atol=1e-02)
+print(model_result_close)
