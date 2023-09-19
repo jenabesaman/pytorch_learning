@@ -34,8 +34,15 @@ def main(image_path):
     return qr_code_text
 
 
+# if __name__ == "__main__":
+#     image_path = "C:/Workarea/File_Analyser/check/111.jpg"
+#     qr_code_text = main(image_path)
+#     string_lenght=[len(item) for item in qr_code_text]
+#     print(qr_code_text,string_lenght)
+#     # print(qr_code_text[2])
+
 if __name__ == "__main__":
-    image_path = "C:/Workarea/File_Analyser/check/qr.jpg"
+    image_path = "C:/Workarea/File_Analyser/check/okcheck.jpg"
     qr_code_text = main(image_path)
     print("QR Code Text:", qr_code_text)
 
@@ -56,3 +63,20 @@ def generate_low_quality_qr_code(text, output_path):
 generate_low_quality_qr_code("Hello, World!", "low_quality_qr.png")
 qr_code_text = main("low_quality_qr.png")
 print("QR Code Text:", qr_code_text)
+
+# def generate_low_quality_qr_code(output_path):
+#     qr = qrcode.QRCode(
+#         version=1,
+#         error_correction=qrcode.constants.ERROR_CORRECT_L,
+#         box_size=10,
+#         border=4,
+#     )
+#     # qr.add_data(text)
+#     qr.make(fit=True)
+#     img = qr.make_image(fill_color="black", back_color="white")
+#     img.save(output_path)
+#
+#
+# generate_low_quality_qr_code("low_quality_qr.png")
+# qr_code_text = main("low_quality_qr.png")
+# print(qr_code_text)
