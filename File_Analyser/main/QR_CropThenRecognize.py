@@ -1,7 +1,10 @@
 import cv2
+import numpy as np
+from pyzbar import pyzbar
+
 
 # Load the image
-image = cv2.imread('C:/Workarea/File_Analyser/check/111.jpg')
+image = cv2.imread('C:/Workarea/File_Analyser/check/okcheck.jpg')
 
 
 # Get the dimensions of the image
@@ -10,7 +13,7 @@ x, y, _ = image.shape
 print(y)
 # Define the coordinates for cropping (e.g., top-left quarter)
 x_start = 0
-y_start =y//6
+y_start =0
 x_end = x//3
 y_end = int(y//3)
 print(y_end)
@@ -19,16 +22,44 @@ print(y_end)
 cropped_image = image[y_start:y_end, x_start:x_end]
 
 # Save the cropped image to a new file
-cv2.imwrite('C:/Workarea/File_Analyser/check/fixed.jpg', cropped_image)
+# cv2.imwrite('C:/Workarea/File_Analyser/check/fixed.jpg', cropped_image)
+#
+# image = cv2.imread("C:/Workarea/File_Analyser/check/fixed.jpg")
 
-import cv2
-import numpy as np
-from pyzbar import pyzbar
 
-image = cv2.imread("C:/Workarea/File_Analyser/check/fixed.jpg")
-_, image = cv2.threshold(image, 120, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-# image = cv2.resize(image, (640, 850))
-image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+image=cropped_image
+scale = 2
+width = int(image.shape[1] * scale)
+height = int(image.shape[0] * scale)
+image = cv2.resize(image, (width, height))
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+_, thresh = cv2.threshold(gray, 300, 1000, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+# cv2.imshow("img",thresh)
+
+image=thresh
+
+bboxes = []
+for cnt in image:
+    area = cv2.contourArea(cnt)
+    xmin, ymin, width, height = cv2.boundingRect(cnt)
+    extent = area / (width * height)
+
+    # filter non-rectangular objects and small objects
+    if (extent > np.pi / 4) and (area > 100):
+        bboxes.append((xmin, ymin, xmin + width, ymin + height))
+
+
+
+# image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+# _, thresh = cv2.threshold(gray, 150, 200000, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+# kernel = np.ones((3, 3), np.uint8)
+# thresh = cv2.dilate(thresh, kernel, iterations=1)
+# contours, _ = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+# image=contours
+
+# image=thresh
+
 red = (0, 0, 255)
 blue = (255, 0, 0)
 qrcode_color = (255, 255, 0)
