@@ -8,11 +8,9 @@ def DecodeQRCode(file_path: str):
         is_qr = False
         image = cv2.imread(file_path)
         for threshold_value in range(0, 256, 10):
-
             gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             _, thresholded_image = cv2.threshold(gray_image, threshold_value, 255, cv2.THRESH_BINARY)
             decoded_objects = decode(thresholded_image)
-            print(len(decoded_objects))
             if len(decoded_objects) == 1:
                 for obj in decoded_objects:
                     print(f"len:{len(obj.data.decode('utf-8'))}")
