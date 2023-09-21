@@ -27,7 +27,7 @@ def detect_faces(image_path):
         for i, (x, y, w, h) in enumerate(faces, start=1):
             output_text += f"Face {i} - X: {x}, Y: {y}, Width: {w}, Height: {h}\n"
         print(output_text)
-        print(image.shape[0]-w<int(1.5*w),image.shape[1]- h <int(1.5*h))
+        print(image.shape[0]-w<int(2.2*w),image.shape[1]- h <int(1.5*h))
         if image.shape[0]-w<int(1.5*w) and image.shape[1]- h <int(1.5*h):
             print("personal")
     else:
@@ -36,5 +36,5 @@ def detect_faces(image_path):
 
 
 if __name__ == "__main__":
-    input_image = "C:/Workarea/File_Analyser/face/mehran.jpg"  # Replace with your input image path
+    input_image = "C:/Workarea/File_Analyser/face/hamedi.jpg"  # Replace with your input image path
     detect_faces(input_image)

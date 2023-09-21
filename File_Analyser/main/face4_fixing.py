@@ -12,7 +12,7 @@ def detect_faces(file_path: str):
     output = False
     if len(faces) == 1:
         for (x, y, w, h) in faces:
-            if image.shape[0] - w < int(1.3 * w) and image.shape[1] - h < int(1.2 * h):
+            if image.shape[0] - w < int(2.2* w) and image.shape[1] - h < int(2 * h):
                 output = True
                 return output
             else:
@@ -21,4 +21,4 @@ def detect_faces(file_path: str):
         return output
 
 
-print(detect_faces(file_path="C:/Workarea/File_Analyser/face/saman.jpg"))
+print(detect_faces(file_path="C:/Workarea/File_Analyser/face/hamedi.jpg"))
