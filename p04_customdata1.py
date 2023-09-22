@@ -591,7 +591,7 @@ def plot_loss_curves(results:Dict[str,List[float]]):
     loss=results["train_loss"]
     test_loss=results["test_loss"]
     accuracy=results["train_acc"]
-    test_accuracy=results["test_acc "]
+    test_accuracy=results["test_acc"]
     epochs=range(len(results["train_loss"]))
     plt.figure(figsize=(15,7))
 
@@ -618,3 +618,6 @@ train_transform_trival=torchvision.transforms.Compose([transforms.Resize(size=(6
                                                        transforms.ToTensor()])
 test_transform_trival=torchvision.transforms.Compose([transforms.Resize(size=(64,64)),
                                                       transforms.ToTensor()])
+
+
+train
